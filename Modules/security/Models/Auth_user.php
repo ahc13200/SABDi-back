@@ -1,0 +1,218 @@
+<?php
+/**Generate by ASGENS
+*@author Amanda  
+*@date Sun May 14 14:30:00 GMT-04:00 2023  
+*@time Sun May 14 14:30:00 GMT-04:00 2023  
+*/
+namespace Modules\security\Models;
+
+
+use App\Models\BaseModel;
+
+use Illuminate\Contracts\Auth\Access\Authorizable as AuthorizableContract;
+use Illuminate\Contracts\Auth\Authenticatable as AuthenticatableContract;
+use Illuminate\Contracts\Auth\CanResetPassword as CanResetPasswordContract;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\Hash;
+use Tymon\JWTAuth\Contracts\JWTSubject;
+
+/**
+ * Este es la clase modelo para la tabla public.auth_user.
+ *
+ * Los siguientes son los campos de la tabla 'public.auth_user':
+ * @property integer $id
+ * @property string $password
+ * @property string $last_login
+ * @property boolean $is_superuser
+ * @property string $username
+ * @property string $first_name
+ * @property string $last_name
+ * @property string $email
+ * @property boolean $is_staff
+ * @property boolean $is_active
+ * @property string $date_joined
+
+ * Los siguientes son las relaciones de este modelo :
+
+ * @property Auth_user_groups[] $array_auth_user_groups
+ * @property Auth_user_user_permissions[] $array_auth_user_user_permissions
+ **/
+
+
+
+class Auth_user extends BaseModel implements
+    AuthenticatableContract,
+    AuthorizableContract,
+    CanResetPasswordContract,
+    JWTSubject
+{
+    use \Illuminate\Auth\Authenticatable, \Illuminate\Foundation\Auth\Access\Authorizable, \Illuminate\Auth\Passwords\CanResetPassword, \Illuminate\Auth\MustVerifyEmail,HasFactory,Notifiable;
+ /**
+     * The table associated with the model.
+     *
+     * @var string
+     */
+    protected $table = 'public.auth_user';
+
+   /**
+     * The connection name for the model.
+     *
+     * @var string|null
+     */
+    protected $connection = 'bd';
+
+    /**
+     * The primarykey associated with the table-model.
+     *
+     * @var integer
+     */
+    protected $primaryKey = 'id';
+
+    /**
+     * Indicates if the model should be timestamped.
+     *
+     * @var bool
+     */
+
+    public $timestamps = false;
+
+
+    /**
+     * The "type" of the auto-incrementing ID.
+     *
+     * @var string
+     */
+    protected $keyType = 'integer';
+
+/**
+     * The attributes that should be hidden for arrays.
+     *
+     * @var array
+     */
+    protected $hidden = ['password'];
+
+    const RELATIONS = ['array_auth_user_groups','array_auth_user_user_permissions'];
+/**
+     * The number of models to return for pagination.
+     *
+     * @var int
+     */
+    protected $perPage = 15;
+
+    protected $appends = [];
+
+    /**
+     * Model Class Name
+     *
+     * @var string
+     */
+    const MODEL = 'Auth_user';
+    /**
+     * The attributes that are mass assignable.
+     *
+     * @var array
+     */
+    protected $fillable = [
+      'id',
+      'password',
+      'last_login',
+      'is_superuser',
+      'username',
+      'first_name',
+      'last_name',
+      'email',
+      'is_staff',
+      'is_active',
+      'date_joined'
+    ];
+
+	 /**
+     * 
+     * Get array_auth_user_groups
+     */
+	  public function array_auth_user_groups()
+		{
+			return $this->hasMany(Auth_user_groups::class,'user_id','id');
+		}
+
+	 /**
+     * 
+     * Get array_auth_user_user_permissions
+     */
+	  public function array_auth_user_user_permissions()
+		{
+			return $this->hasMany(Auth_user_user_permissions::class,'user_id','id');
+		}
+
+
+    protected function rules($scenario='create')
+    {
+          $rules=[
+            'create'=>[
+                'password' =>'required|max:128',
+                'last_login' =>'nullable|date',
+                'is_superuser' =>'required|boolean',
+                'username' =>'required|max:150',
+                'first_name' =>'required|max:150',
+                'last_name' =>'required|max:150',
+                'email' =>'required|max:254',
+                'is_staff' =>'required|boolean',
+                'is_active' =>'required|boolean',
+                'date_joined' =>'required|date'
+            ],
+            'update'=>[
+                'id' =>'required|unique:'.$this->connection.'.public.auth_user,id,'.$this->id.',id',
+                'password' =>'required|max:128',
+                'last_login' =>'nullable|date',
+                'is_superuser' =>'required|boolean',
+                'username' =>'required|max:150',
+                'first_name' =>'required|max:150',
+                'last_name' =>'required|max:150',
+                'email' =>'required|max:254',
+                'is_staff' =>'required|boolean',
+                'is_active' =>'required|boolean',
+                'date_joined' =>'required|date'
+            ]
+        ];
+        if(!isset($rules[$scenario]))
+            throw new \Exception('Scenario '.$scenario.' not exist');
+        return $rules[$scenario];
+    }
+
+    protected static function boot()
+    {
+        parent::boot(); // TODO: Change the autogenerated stub
+        static::updating(function (Model $model) {
+            $changed_pass = $model->isDirty('password');
+            if ($changed_pass)
+                $model->password = Hash::make($model->password);
+        });
+        static::creating(function (Model $model) {
+            $model->password = Hash::make($model->password);
+        });
+
+    }
+    public function getAuthPassword()
+    {
+        return $this->attributes['password'];
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function getJWTIdentifier()
+    {
+        return $this->getKey();
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function getJWTCustomClaims()
+    {
+        return ['email'=>$this->email];
+    }
+}
+

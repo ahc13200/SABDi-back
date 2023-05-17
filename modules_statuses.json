@@ -1,0 +1,6 @@
+{
+    "admin":true,
+    "report":true,
+    "security":true,
+    "services":true
+}
